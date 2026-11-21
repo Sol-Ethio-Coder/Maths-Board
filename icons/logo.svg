@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Math Board">
+  <rect width="128" height="128" rx="28" fill="#0F2A4A"/>
+  <rect x="6" y="6" width="116" height="116" rx="23" fill="none" stroke="#F5A623" stroke-width="3"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M30 42H98"/><path d="M46 42V88"/><path d="M76 42V72Q76 88 92 86"/>
+  </g>
+  <path d="M26 104Q45 92 64 104T102 104" fill="none" stroke="#F5A623" stroke-width="6" stroke-linecap="round"/>
+</svg>
