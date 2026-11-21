@@ -59,8 +59,11 @@
   function zoomAt(f, mx, my) {
     var z = Math.max(1, Math.min(4, view.z * f)), bx = (mx - view.ox) / view.z, by = (my - view.oy) / view.z; setView(z, mx - bx * z, my - by * z);
   }
-  function layout() {
-    k = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080) || 1; dpr = window.devicePixelRatio || 1;
+  var lw = 0, lh = 0;
+  function layout(force) {                /* re-fit the board whenever the free space changes (toolbar opened, hidden, rotated...) */
+    var sw = stage.clientWidth, sh = stage.clientHeight;
+    if (!force && sw === lw && sh === lh) return; lw = sw; lh = sh;
+    k = Math.min(sw / 1920, sh / 1080) || 1; dpr = window.devicePixelRatio || 1;
     var w = Math.floor(1920 * k), h = Math.floor(1080 * k);
     bd.style.width = w + 'px'; bd.style.height = h + 'px'; cv.style.width = w + 'px'; cv.style.height = h + 'px';
     cv.width = Math.floor(w * dpr); cv.height = Math.floor(h * dpr); setView(view.z, view.ox, view.oy);
@@ -244,6 +247,7 @@
     }
     var dv = document.createElement('a'); dv.id = 'dev'; dv.href = 'https://sol-ethio-coder.netlify.app'; dv.target = '_blank'; dv.rel = 'noopener noreferrer';
     dv.title = 'Developer: Sol Ethio Coder'; dv.innerHTML = '<img src="/icons/dev-logo.svg" alt="" width="22" height="22"><span>Developer: Sol Ethio Coder</span>'; bar.appendChild(dv);
+    layout();                              /* the toolbar height may have changed: fit the board into what is left */
   }
   function hide() { bar.style.display = 'none'; $('#show').style.display = 'block'; layout(); }
   function show() { bar.style.display = 'flex'; $('#show').style.display = 'none'; layout(); ui(); }
@@ -263,7 +267,9 @@
     else return;
     ui();
   });
-  addEventListener('resize', layout);
+  addEventListener('resize', function () { layout(true); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { layout(); });
+  if (window.ResizeObserver) new ResizeObserver(function () { window.requestAnimationFrame(function () { layout(); }); }).observe(stage);
 
   /* ---------- start ---------- */
   R.dataset.t = th; setBg(BGS.indexOf(bg) < 0 ? 'grid' : bg); ui(); layout(); keepAwake();

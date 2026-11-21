@@ -1,5 +1,5 @@
 /* Service worker: lets Math Board open fast and work offline (without sync). */
-var CACHE = 'math-board-v4';
+var CACHE = 'math-board-v5';
 var FILES = ['/', '/index.html', '/css/style.css', '/js/app.js', '/js/sync.js', '/vendor/peerjs.min.js', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png', '/icons/dev-logo.svg', '/favicon.svg', '/favicon.ico'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) {
