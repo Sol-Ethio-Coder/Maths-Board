@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F2A4A">
+<meta name="description" content="Math Mastery lessons: study notes and quizzes for Grade 9 to 12 mathematics. Developer: Sol Ethio Coder.">
+<meta name="author" content="Sol Ethio Coder">
+<title>Lessons, notes and quizzes · Math Board</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/lessons.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/"><img src="/icons/logo.svg" alt="" width="34" height="34"><span><b>Math Mastery</b><small>Lessons, notes and quizzes</small></span></a>
+  <nav>
+    <a href="#/" id="nav-l">Lessons</a>
+    <a href="/" id="nav-b">Math Board</a>
+    <button id="theme" type="button" aria-label="Switch light or dark theme">Theme</button>
+  </nav>
+</header>
+<main id="app" aria-live="polite"><p class="load">Loading lessons…</p></main>
+<footer>
+  <a id="dev" href="https://sol-ethio-coder.netlify.app" target="_blank" rel="noopener noreferrer"><img src="/icons/dev-logo.svg" alt="" width="22" height="22"><span>Developer: Sol Ethio Coder</span></a>
+</footer>
+<noscript>This page needs JavaScript to work.</noscript>
+<script src="/data/catalog.js"></script>
+<script src="/data/content-g9.js"></script>
+<script src="/data/content-g10.js"></script>
+<script src="/data/content-g11.js"></script>
+<script src="/data/content-g12.js"></script>
+<script src="/js/lessons.js"></script>
+<script>if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})</script>
+</body>
+</html>

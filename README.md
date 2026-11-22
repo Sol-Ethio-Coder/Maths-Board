@@ -8,6 +8,33 @@ No build step. No server of your own. It is plain HTML, CSS and JavaScript.
 
 ## Features
 
+### Lessons, notes and quizzes (new)
+
+Open **Lessons** in the toolbar (or go to `/lessons.html`).
+
+- A catalogue of all **4 grades, 36 units and 209 lessons** from the course blueprint
+- **Study notes** for each lesson: key ideas, symbol tables, worked examples, common mistakes and a short recap
+- **Quiz** for each lesson: multiple choice, shuffled options, instant feedback with an explanation, a score, a review of missed questions, and a retry. Press 1–4 to answer
+- **Progress** is saved in the learner's browser (best score per lesson; 70% or more counts as passed)
+- Search, light and dark theme, and **Print or save as PDF** for the notes
+- A link back to the Math Board for practice
+- Ready now: **Grade 9, Unit 1 (Further on Sets), all 6 lessons.** All other lessons show “Coming soon” until you add them
+
+#### Add a lesson
+
+1. Open `data/content-g9.js` (or `content-g10.js`, `content-g11.js`, `content-g12.js`).
+2. Copy an existing lesson block and change its id to the lesson you are adding. IDs follow the pattern `g9-u2-l01` (grade, unit, lesson). The full list is in `data/catalog.js`.
+3. Fill in `objective`, `notes` and `quiz` (at least 4 questions). Note block types: `h` (heading), `p` (paragraph), `def` (`["Term", "meaning"]`), `list`, `table` (first row is the header), `ex` (`{ q, steps, a }`), `warn` and `recap`. Use `**text**` for bold.
+4. Check your work: `npm run check` (or `node tools/validate-content.js`). It reports wrong ids, bad answer numbers and missing explanations.
+5. Raise the version in `sw.js`, then commit and push.
+
+A quiz question looks like this (`a` is the position of the right option, starting at 0):
+
+```js
+{ q: "How many subsets does {a, b, c} have?", o: ["3", "6", "8", "9"], a: 2, why: "2³ = 8." }
+```
+
+
 - Pen, line, circle, box, text and move tools
 - Colour code buttons: Given, Key step, Answer, Mistake (keys 1–4)
 - Three pen thicknesses
@@ -49,7 +76,7 @@ cd math-board
 npx serve .
 ```
 
-Open http://localhost:3000. (Any static server works. Do not open `index.html` by double-clicking, because the app and service worker need to be served over http.)
+Open http://localhost:3000 (lessons: http://localhost:3000/lessons.html). (Any static server works. Do not open `index.html` by double-clicking, because the app and service worker need to be served over http.)
 
 ## Push to GitHub
 
@@ -125,6 +152,13 @@ math-board/
 ├── css/style.css           styles
 ├── js/app.js               whiteboard logic
 ├── js/sync.js              phone/PC sync (PeerJS)
+├── lessons.html            lessons, notes and quizzes page
+├── css/lessons.css         styles for the lessons page
+├── js/lessons.js           catalogue, notes viewer, quiz engine, progress
+├── data/catalog.js         all grades, units and lessons
+├── data/content-g9.js      Grade 9 notes and quizzes (Unit 1 ready); g10, g11, g12 are empty, ready to fill
+├── tools/validate-content.js  checks lesson content (npm run check)
+├── serve.json              local server settings
 ├── vendor/peerjs.min.js    PeerJS 1.5.4 (MIT licence)
 ├── sw.js                   service worker (offline, fast loading)
 ├── manifest.webmanifest    installable app settings
@@ -141,7 +175,7 @@ math-board/
 
 - Colours: edit `PAL` and `NM` at the top of `js/app.js`.
 - Pen sizes: edit `WS`.
-- After you change any file, raise the version in `sw.js` (`math-board-v4` to `math-board-v5`) so devices load the new files.
+- After you change any file, raise the version in `sw.js` (`math-board-v6` to `math-board-v7`) so devices load the new files.
 
 ## Logos and branding
 

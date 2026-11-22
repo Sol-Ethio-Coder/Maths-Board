@@ -5,7 +5,8 @@
   "description": "Whiteboard web app for recording math lessons with OBS Studio.",
   "scripts": {
     "dev": "npx serve .",
-    "start": "npx serve ."
+    "start": "npx serve .",
+    "check": "node tools/validate-content.js"
   },
   "license": "MIT",
   "author": "Sol Ethio Coder (https://sol-ethio-coder.netlify.app)",

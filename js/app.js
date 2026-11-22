@@ -233,6 +233,7 @@
     B('Undo', undo); B('Eraser (clear all)', eraseAll, false, 'danger'); sp();
     B('Zoom −', function () { zoomAt(1 / 1.4, 960, 540); }); B('Zoom +', function () { zoomAt(1.4, 960, 540); }); B('Fit', function () { setView(1, 0, 0); });
     var zl = document.createElement('span'); zl.id = 'zl'; zl.textContent = Math.round(view.z * 100) + '%'; zl.style.fontSize = '12px'; bar.appendChild(zl); sp();
+    var ln = document.createElement('a'); ln.href = '/lessons.html'; ln.className = 'btn'; ln.textContent = 'Lessons'; ln.title = 'Study notes and quizzes'; bar.appendChild(ln); sp();
     B(more ? 'Less ▴' : 'More ▾', function () { more = !more; }, more); B('Hide bar', hide);
     var st = document.createElement('span'); st.id = 'st'; st.textContent = statusTxt; bar.appendChild(st);
     if (more) {
