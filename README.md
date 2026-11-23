@@ -8,54 +8,39 @@ No build step. No server of your own. It is plain HTML, CSS and JavaScript.
 
 ## Features
 
-### Lessons, notes and quizzes (new)
+### Lessons, notes, quizzes and a teaching script
 
-Open **Lessons** in the toolbar (or go to `/lessons.html`).
+Open **Lessons** in the toolbar (or go to `/lessons.html`). **All 209 lessons** from the course blueprint are in the site: Grade 9 (55), Grade 10 (47), Grade 11 (57) and Grade 12 (50).
 
-- A catalogue of all **4 grades, 36 units and 209 lessons** from the course blueprint
-- **Study notes** for each lesson: key ideas, symbol tables, worked examples, common mistakes and a short recap
-- **Quiz** for each lesson: multiple choice, shuffled options, instant feedback with an explanation, a score, a review of missed questions, and a retry. Press 1–4 to answer
-- **Progress** is saved in the learner's browser (best score per lesson; 70% or more counts as passed)
-- Search, light and dark theme, and **Print or save as PDF** for the notes
-- A link back to the Math Board for practice
-- Ready now: **Grade 9, Unit 1 (Further on Sets), all 6 lessons.** All other lessons show “Coming soon” until you add them
+Every lesson has four tabs:
 
-#### Add a lesson
+- **Notes:** objective, key ideas, worked examples, a common-mistake box and a recap. Print or save as PDF.
+- **Quiz:** 6 multiple-choice questions with shuffled options, an explanation after every answer, a score, a review of missed questions and a retry. Questions are a mix of fixed questions and fresh, computer-checked ones, so a retry is never the same.
+- **Practice:** unlimited generated questions with a streak counter (80 question generators cover the number work, algebra, geometry, trigonometry, statistics, matrices, complex numbers, calculus and business maths).
+- **Teach script:** the S.P.A.R.K. plan for recording that lesson (Spark, Present, Apply, Run, Keep) with a timer, big text, the examples, a “pause and try” problem with its answer, the common mistake and the next lesson. Open it on your phone or a second window while you record the Math Board with OBS.
 
-1. Open `data/content-g9.js` (or `content-g10.js`, `content-g11.js`, `content-g12.js`).
-2. Copy an existing lesson block and change its id to the lesson you are adding. IDs follow the pattern `g9-u2-l01` (grade, unit, lesson). The full list is in `data/catalog.js`.
-3. Fill in `objective`, `notes` and `quiz` (at least 4 questions). Note block types: `h` (heading), `p` (paragraph), `def` (`["Term", "meaning"]`), `list`, `table` (first row is the header), `ex` (`{ q, steps, a }`), `warn` and `recap`. Use `**text**` for bold.
-4. Check your work: `npm run check` (or `node tools/validate-content.js`). It reports wrong ids, bad answer numbers and missing explanations.
-5. Raise the version in `sw.js`, then commit and push.
+Also: a **unit test** for every unit (10 mixed questions, 7 correct to pass), progress saved in the learner's browser, search, and a light or dark theme.
 
-A quiz question looks like this (`a` is the position of the right option, starting at 0):
+> The notes, examples and questions are a complete first draft written for your course. As the mathematics instructor, please read each lesson before you record it and change anything to match your own teaching and the curriculum. Run `npm run check` after every change.
+
+#### Add or edit a lesson
+
+Lessons are written in `data/content-g9b.js` (Grade 9, Units 2–9), `data/content-g10.js`, `data/content-g11.js` and `data/content-g12.js`. (Grade 9 Unit 1 is in `data/content-g9.js` in a longer format.) Each lesson is one line of code:
 
 ```js
-{ q: "How many subsets does {a, b, c} have?", o: ["3", "6", "8", "9"], a: 2, why: "2³ = 8." }
+L('g9-u3-l01',                              // lesson id: grade, unit, lesson (see data/catalog.js)
+  'Solve linear equations in one unknown.', // objective
+  ['key idea 1', 'key idea 2'],             // key ideas (use **bold** for terms)
+  [['Question', 'step 1 | step 2', 'Answer']], // worked examples
+  'A common mistake.',                      // common mistake
+  ['lin'],                                  // question generators (names in js/gen.js), or []
+  [['Extra question?', ['A', 'B', 'C', 'D'], 1, 'Why B is right.']]  // your own questions (answer = position, starting at 0)
+);
 ```
 
+A lesson needs at least one generator **or** at least 3 of your own questions. To add a new generator, add a function to `js/gen.js` (see the examples there) that returns `mc(question, rightAnswer, [wrong1, wrong2, wrong3], explanation)`.
 
-- Pen, line, circle, box, text and move tools
-- Colour code buttons: Given, Key step, Answer, Mistake (keys 1–4)
-- Three pen thicknesses
-- **Neat writing helpers** (made for finger writing):
-  - **Smoothing** (Off, Medium, Strong) removes shaky lines
-  - **Hold to straighten:** at the end of a stroke, keep your finger still for half a second. A wobbly line becomes straight (and horizontal or vertical if it is close), and a rough loop becomes a perfect circle. Drag to adjust it before you lift your finger
-  - **Pinch to zoom** (two fingers, up to 400%) and move the board with two fingers: write small in the zoomed view and it looks neat and small on the recording. The zoom is only on your device, so the PC board stays full size
-  - **Typed text** with a math symbol keyboard (², √, π, ≤, ∈, ∪, ∩, ∅, ∑, ∫ and more). Typing `x^2`, `sqrt`, `pi`, `<=`, `>=`, `!=` or `->` turns into the symbol
-  - **Lined or grid background** to keep your writing straight
-  - Extra touches (a resting palm or a third finger) are ignored
-- **Eraser button clears the whole board.** Undo (Ctrl+Z) brings it back
-- One-click Venn circles, number line and x–y axes
-- Grid on/off, dark or light board (your choice is remembered)
-- Save the board as a PNG image
-- **Phone to PC sync**: open the same room on two devices and both boards stay the same
-- Hide toolbar (key H) for a clean recording
-- Works on any screen size (the board is always 16:9), with mouse, touch and pen
-- Installable app (PWA), works offline for drawing
-- Developer credit with logo in the toolbar (it disappears when you hide the toolbar, so it never appears in your recordings)
-- Favicon, app icons (including a maskable icon) and a social preview image (`og-image.png`)
-- Keeps the screen awake while it is open (where the browser supports it)
+After editing: run `npm run check`, raise the version in `sw.js`, then commit and push.
 
 ## Keyboard shortcuts
 
@@ -154,9 +139,15 @@ math-board/
 ├── js/sync.js              phone/PC sync (PeerJS)
 ├── lessons.html            lessons, notes and quizzes page
 ├── css/lessons.css         styles for the lessons page
-├── js/lessons.js           catalogue, notes viewer, quiz engine, progress
+├── js/lessons.js           catalogue, notes, quiz, practice, teach script, unit tests, progress
+├── js/gen.js               80 question generators (answers worked out by the computer)
+├── data/dsl.js             L(...) short-hand for writing lessons
 ├── data/catalog.js         all grades, units and lessons
-├── data/content-g9.js      Grade 9 notes and quizzes (Unit 1 ready); g10, g11, g12 are empty, ready to fill
+├── data/content-g9.js      Grade 9 Unit 1 (6 lessons, long format)
+├── data/content-g9b.js     Grade 9 Units 2-9 (49 lessons)
+├── data/content-g10.js     Grade 10 (47 lessons)
+├── data/content-g11.js     Grade 11 (57 lessons)
+├── data/content-g12.js     Grade 12 (50 lessons)
 ├── tools/validate-content.js  checks lesson content (npm run check)
 ├── serve.json              local server settings
 ├── vendor/peerjs.min.js    PeerJS 1.5.4 (MIT licence)
@@ -175,7 +166,7 @@ math-board/
 
 - Colours: edit `PAL` and `NM` at the top of `js/app.js`.
 - Pen sizes: edit `WS`.
-- After you change any file, raise the version in `sw.js` (`math-board-v6` to `math-board-v7`) so devices load the new files.
+- After you change any file, raise the version in `sw.js` (`math-board-v7` to `math-board-v8`) so devices load the new files.
 
 ## Logos and branding
 

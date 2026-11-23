@@ -53,6 +53,13 @@ th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);verti
 .score{font:700 44px/1 Cambria,Georgia,serif;color:var(--ac)}
 footer{display:flex;justify-content:center;padding:14px;border-top:1px solid var(--line)}
 #dev{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--mut);font-size:13px}#dev img{border-radius:6px}
+/* teach script */
+.script{line-height:1.6}
+.step{background:var(--card);border-radius:14px;padding:6px 16px 10px;margin:12px 0;border-left:6px solid var(--line)}
+.step.now{border-left-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+.step h3{margin-top:10px}.wr{color:var(--mut)}
+.timer{font:700 24px Cambria,Georgia,serif;color:var(--ac);min-width:64px}
+[hidden]{display:none!important}
 @media print{
  body{background:#fff;color:#000;font-size:12pt}.top,footer,.actions,.pn,.tabs,.noprint{display:none!important}
  .def,.ex,.obj,.recap,table,.warn{background:#fff!important;color:#000;border:1px solid #999;break-inside:avoid}

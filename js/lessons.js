@@ -25,7 +25,19 @@
   function show(nodes) { app.innerHTML = ''; nodes.forEach(function (n) { app.appendChild(n); }); }
   function best(id) { return store.get('quiz.' + id, null); }
   function passed(id) { var b = best(id); return !!b && b.best / b.total >= PASS; }
-  function ready(id) { return !!(CT[id] && CT[id].notes && CT[id].quiz); }
+  var GEN_FOR = { 'g9-u1-l03': ['subsets'], 'g9-u1-l04': ['venn2'], 'g9-u1-l06': ['venn2'] };
+  function gensFor(id) { var c = CT[id]; return ((c && c.gen) || GEN_FOR[id] || []).filter(function (n) { return window.MB_GEN && window.MB_GEN[n]; }); }
+  function ready(id) { var c = CT[id]; return !!(c && c.notes && ((c.quiz && c.quiz.length) || gensFor(id).length)); }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function genQ(id) { var g = gensFor(id); return g.length ? window.MB_GEN[g[Math.floor(Math.random() * g.length)]]() : null; }
+  function questions(ids, n) {              /* fixed questions first, then fresh generated ones */
+    var out = [], seen = {}, add = function (q) { if (q && !seen[q.q]) { seen[q.q] = 1; out.push(q); } };
+    var fixed = []; ids.forEach(function (id) { ((CT[id] && CT[id].quiz) || []).forEach(function (q) { fixed.push(q); }); });
+    shuffle(fixed).slice(0, Math.ceil(n / 2)).forEach(add);
+    var tries = 0, k = 0; while (out.length < n && tries++ < 200) { var id = ids[k++ % ids.length], g = genQ(id); if (g) add(g); else if (tries > 50) { var f = fixed[Math.floor(Math.random() * fixed.length)]; add(f); } }
+    shuffle(fixed).forEach(function (q) { if (out.length < n) add(q); });
+    return shuffle(out).slice(0, n);
+  }
 
   /* ---------- catalogue ---------- */
   function row(l, ctx) {
@@ -57,7 +69,9 @@
       g.units.forEach(function (u) {
         var nr = u.lessons.filter(function (l) { return ready(l.id); }).length, d = h('details'); d.open = nr > 0;
         d.appendChild(h('summary', null, null, [h('span', null, 'Unit ' + u.n + ' · ' + u.title + (u.track ? '  (' + u.track + ' track)' : '')), h('small', null, nr + ' of ' + u.lessons.length + ' ready')]));
-        u.lessons.forEach(function (l) { d.appendChild(row(byId[l.id])); }); list.appendChild(d);
+        u.lessons.forEach(function (l) { d.appendChild(row(byId[l.id])); });
+        if (nr) { var ub = best('unit-g' + g.g + '-u' + u.n); d.appendChild(link('Take the unit test (10 mixed questions)' + (ub ? '  ·  best ' + ub.best + '/' + ub.total : ''), '#/unit/g' + g.g + '-u' + u.n, 'row')); }
+        list.appendChild(d);
       });
     }
     s.oninput = function () { query = s.value; paint(); }; paint(); show(nodes);
@@ -84,62 +98,121 @@
     var c = CT[l.id], nodes = [];
     nodes.push(h('div', 'crumb', l.g.name + ' › Unit ' + l.u.n + ' · ' + l.u.title + ' › Lesson ' + l.n));
     nodes.push(h('h1', null, l.title));
-    var pn = h('div', 'pn');
-    var prev = flat[l.idx - 1], next = flat[l.idx + 1];
+    var pn = h('div', 'pn'), prev = flat[l.idx - 1], next = flat[l.idx + 1];
     pn.appendChild(prev ? link('← ' + prev.title, '#/lesson/' + prev.id) : h('span')); pn.appendChild(next ? link(next.title + ' →', '#/lesson/' + next.id) : h('span'));
     if (!ready(l.id)) {
       nodes.push(h('div', 'obj', 'Notes and a quiz for this lesson are **coming soon**. Meanwhile you can practise on the Math Board.'));
       nodes.push(h('div', 'actions', null, [link('Open Math Board', '/', 'pri'), link('All lessons', '#/grade/' + l.g.g)])); nodes.push(pn); show(nodes); return;
     }
     store.set('notes.' + l.id, 1);
-    nodes.push(h('div', 'meta', null, [h('span', 'chip', 'About ' + c.minutes + ' minutes'), h('span', 'chip', c.quiz.length + ' quiz questions'), passed(l.id) ? h('span', 'chip ok', 'Quiz passed ✓') : null]));
-    var tabs = h('div', 'tabs');
-    tabs.appendChild(btn('Notes', tab === 'notes' ? 'on' : '', function () { location.hash = '#/lesson/' + l.id; }));
-    tabs.appendChild(btn('Quiz', tab === 'quiz' ? 'on' : '', function () { location.hash = '#/lesson/' + l.id + '/quiz'; }));
+    var nq = (c.quiz ? c.quiz.length : 0), hasGen = gensFor(l.id).length > 0;
+    nodes.push(h('div', 'meta', null, [h('span', 'chip', 'About ' + c.minutes + ' minutes'), h('span', 'chip', hasGen ? 'Unlimited practice questions' : nq + ' quiz questions'), passed(l.id) ? h('span', 'chip ok', 'Quiz passed ✓') : null]));
+    var tabs = h('div', 'tabs noprint');
+    [['notes', 'Notes'], ['quiz', 'Quiz'], ['practice', 'Practice'], ['script', 'Teach script']].forEach(function (t) {
+      tabs.appendChild(btn(t[1], tab === t[0] ? 'on' : '', function () { location.hash = '#/lesson/' + l.id + (t[0] === 'notes' ? '' : '/' + t[0]); }));
+    });
     nodes.push(tabs);
-    if (tab === 'quiz') { nodes.push(h('div', null, null, [])); show(nodes); quiz(l, c, app); app.appendChild(pn); return; }
+    if (tab === 'quiz') { show(nodes); runQuiz(app, questions([l.id], 6), 'quiz.' + l.id, next, '#/lesson/' + l.id + '/quiz', '#/lesson/' + l.id); app.appendChild(pn); return; }
+    if (tab === 'practice') { show(nodes); practice(app, l); app.appendChild(pn); return; }
+    if (tab === 'script') { nodes.push(scriptView(l, c, next)); nodes.push(pn); show(nodes); return; }
     nodes.push(h('div', 'obj', '**Objective:** ' + c.objective));
     c.notes.forEach(function (b) { nodes.push(block(b)); });
-    nodes.push(h('div', 'actions', null, [btn('Take the quiz', 'pri', function () { location.hash = '#/lesson/' + l.id + '/quiz'; }), btn('Print or save as PDF', '', function () { window.print(); }), link('Practise on the Math Board', '/')]));
+    nodes.push(h('div', 'actions', null, [btn('Take the quiz', 'pri', function () { location.hash = '#/lesson/' + l.id + '/quiz'; }), btn('More practice', '', function () { location.hash = '#/lesson/' + l.id + '/practice'; }), btn('Print or save as PDF', '', function () { window.print(); }), link('Practise on the Math Board', '/')]));
     nodes.push(pn); show(nodes);
   }
 
-  /* ---------- quiz ---------- */
-  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
-  function quiz(l, c, host) {
-    var qs = shuffle(c.quiz.map(function (q, i) { return i; })), i = 0, score = 0, wrong = [], box = h('div'); host.appendChild(box);
+  /* ---------- quiz engine (used for lesson quizzes and unit tests) ---------- */
+  function runQuiz(host, qlist, saveKey, nextL, retryHash, backHash) {
+    var i = 0, score = 0, wrong = [], box = h('div'); host.appendChild(box);
     function ask() {
       box.innerHTML = '';
-      var q = c.quiz[qs[i]], order = shuffle(q.o.map(function (t, k) { return k; })), done = false;
-      var card = h('div', 'q-card', null, [h('div', 'mut', 'Question ' + (i + 1) + ' of ' + qs.length), h('h2', null, q.q)]), opts = h('div', 'opts'), fb = h('div'), nx = h('div', 'actions');
+      var q = qlist[i], order = shuffle(q.o.map(function (t, k) { return k; })), done = false;
+      var card = h('div', 'q-card', null, [h('div', 'mut', 'Question ' + (i + 1) + ' of ' + qlist.length), h('h2', null, q.q)]), opts = h('div', 'opts'), fb = h('div'), nx = h('div', 'actions');
       function pick(pos) {
-        if (done) return; done = true; var right = order[pos] === q.a;
-        if (right) score++; else wrong.push(q);
+        if (done) return; done = true; var right = order[pos] === q.a; if (right) score++; else wrong.push(q);
         [].forEach.call(opts.children, function (b, k) { b.disabled = true; if (order[k] === q.a) b.classList.add('good'); else if (k === pos) b.classList.add('wrong'); });
         fb.className = 'fb'; fb.textContent = (right ? 'Correct. ' : 'Not quite. ') + q.why;
-        nx.appendChild(btn(i + 1 < qs.length ? 'Next question' : 'See my score', 'pri', function () { i++; if (i < qs.length) ask(); else finish(); })); nx.firstChild.focus();
+        nx.appendChild(btn(i + 1 < qlist.length ? 'Next question' : 'See my score', 'pri', function () { i++; if (i < qlist.length) ask(); else finish(); })); nx.firstChild.focus();
       }
       order.forEach(function (k, pos) { var b = h('button', 'opt', null, [h('kbd', null, String(pos + 1)), document.createTextNode(q.o[k])]); b.type = 'button'; b.onclick = function () { pick(pos); }; opts.appendChild(b); });
       card.appendChild(opts); card.appendChild(fb); card.appendChild(nx); box.appendChild(card);
       box._key = function (e) { var n = parseInt(e.key, 10); if (n >= 1 && n <= order.length) pick(n - 1); };
     }
     function finish() {
-      box._key = null; var total = qs.length, b = best(l.id), nb = Math.max(b ? b.best : 0, score);
-      store.set('quiz.' + l.id, { best: nb, total: total, at: new Date().toISOString().slice(0, 10) });
-      var ok = score / total >= PASS, card = h('div', 'q-card', null, [h('div', 'score', score + ' / ' + total), h('p', null, ok ? 'Well done. You passed this lesson quiz.' : 'Keep going. Read the notes again and try once more; you need ' + Math.ceil(PASS * total) + ' correct to pass.')]);
+      box._key = null; var total = qlist.length, b = best(saveKey.slice(5)), nb = Math.max(b ? b.best : 0, score);
+      store.set(saveKey, { best: nb, total: total, at: new Date().toISOString().slice(0, 10) });
+      var ok = score / total >= PASS, card = h('div', 'q-card', null, [h('div', 'score', score + ' / ' + total), h('p', null, ok ? 'Well done. You passed.' : 'Keep going. Read the notes again and try once more; you need ' + Math.ceil(PASS * total) + ' correct to pass.')]);
       if (wrong.length) { card.appendChild(h('h3', null, 'Review the ones you missed')); wrong.forEach(function (q) { card.appendChild(h('div', 'ex', null, [h('p', 'q', q.q), h('p', 'a', 'Answer: ' + q.o[q.a]), h('p', null, q.why)])); }); }
-      var act = h('div', 'actions'); act.appendChild(btn('Try again', 'pri', function () { location.hash = '#/lesson/' + l.id + '/quiz'; route(); }));
-      act.appendChild(btn('Back to notes', '', function () { location.hash = '#/lesson/' + l.id; }));
-      var nx = flat[l.idx + 1]; if (nx) act.appendChild(link('Next lesson →', '#/lesson/' + nx.id)); card.appendChild(act); box.innerHTML = ''; box.appendChild(card);
+      var act = h('div', 'actions'); act.appendChild(btn('Try again', 'pri', function () { route(); }));
+      act.appendChild(btn('Back', '', function () { location.hash = backHash; })); if (nextL) act.appendChild(link('Next lesson →', '#/lesson/' + nextL.id)); card.appendChild(act); box.innerHTML = ''; box.appendChild(card);
     }
     document.onkeydown = function (e) { if (box._key && !e.ctrlKey && !e.metaKey) box._key(e); }; ask();
+  }
+  function unitView(u, g) {
+    var ids = u.lessons.map(function (l) { return l.id; }).filter(ready), nodes = [h('div', 'crumb', g.name + ' › Unit ' + u.n), h('h1', null, 'Unit test: ' + u.title)];
+    if (!ids.length) { nodes.push(h('div', 'obj', 'The unit test opens when at least one lesson in this unit is ready.')); nodes.push(link('Back to lessons', '#/grade/' + g.g, 'pri')); show(nodes); return; }
+    nodes.push(h('p', 'mut', '10 mixed questions from ' + ids.length + ' ready lesson' + (ids.length > 1 ? 's' : '') + '. Questions change every time. You need 7 correct to pass.')); show(nodes);
+    runQuiz(app, questions(ids, 10), 'quiz.unit-g' + g.g + '-u' + u.n, null, '', '#/grade/' + g.g);
+  }
+
+  /* ---------- practice: unlimited generated questions ---------- */
+  function practice(host, l) {
+    var box = h('div'), tot = 0, ok = 0, streak = 0; host.appendChild(box);
+    if (!gensFor(l.id).length) box.appendChild(h('div', 'obj', 'This lesson has no question generator yet, so practice uses the lesson quiz questions. Add a generator name to the lesson to get unlimited questions.'));
+    function next() {
+      var q = genQ(l.id) || shuffle((CT[l.id].quiz || []).slice())[0]; if (!q) return;
+      var order = shuffle(q.o.map(function (t, k) { return k; })), done = false;
+      var stats = h('div', 'mut', 'Answered: ' + tot + ' · Correct: ' + ok + ' · Streak: ' + streak), card = h('div', 'q-card', null, [stats, h('h2', null, q.q)]), opts = h('div', 'opts'), fb = h('div'), nx = h('div', 'actions');
+      order.forEach(function (k, pos) {
+        var b = h('button', 'opt', null, [h('kbd', null, String(pos + 1)), document.createTextNode(q.o[k])]); b.type = 'button';
+        b.onclick = function () {
+          if (done) return; done = true; tot++; var right = order[pos] === q.a; if (right) { ok++; streak++; } else streak = 0;
+          [].forEach.call(opts.children, function (x, z) { x.disabled = true; if (order[z] === q.a) x.classList.add('good'); else if (z === pos) x.classList.add('wrong'); });
+          fb.className = 'fb'; fb.textContent = (right ? 'Correct. ' : 'Not quite. ') + q.why; nx.appendChild(btn('New question', 'pri', next)); nx.firstChild.focus();
+        }; opts.appendChild(b);
+      });
+      card.appendChild(opts); card.appendChild(fb); card.appendChild(nx); box.innerHTML = ''; box.appendChild(card);
+      box._key = function (e) { var n = parseInt(e.key, 10); if (n >= 1 && n <= order.length) opts.children[n - 1].click(); };
+    }
+    document.onkeydown = function (e) { if (box._key && !e.ctrlKey && !e.metaKey) box._key(e); }; next();
+  }
+
+  /* ---------- teach script: the S.P.A.R.K. plan for recording this lesson ---------- */
+  function scriptView(l, c, next) {
+    var root = h('div', 'script'), u = l.u, step = function (letter, name, time, kids) { var d = h('div', 'step', null, [h('h3', null, letter + '  ' + name + '   ' + time)]); kids.forEach(function (k) { if (k) d.appendChild(k); }); d.dataset.k = letter; return d; };
+    var low = c.objective.charAt(0).toLowerCase() + c.objective.slice(1), steps = [], timerTxt = h('span', 'timer', '0:00'), t0 = 0, run = null, secs = 0;
+    var tools = h('div', 'actions noprint', null, [h('span', null, 'Timer: '), timerTxt]);
+    var tb = btn('Start', 'pri', function () { if (run) { clearInterval(run); run = null; tb.textContent = 'Resume'; } else { tb.textContent = 'Pause'; run = setInterval(tick, 1000); } });
+    tools.appendChild(tb); tools.appendChild(btn('Reset', '', function () { clearInterval(run); run = null; secs = 0; tb.textContent = 'Start'; tick(true); }));
+    tools.appendChild(btn('Text smaller', '', function () { size(-2); })); tools.appendChild(btn('Text bigger', '', function () { size(2); }));
+    tools.appendChild(link('Open Math Board', '/', 'pri'));
+    var sz = store.get('script.size', 20); function size(d) { sz = Math.max(14, Math.min(40, sz + d)); store.set('script.size', sz); root.style.fontSize = sz + 'px'; } root.style.fontSize = sz + 'px';
+    var limits = [0, 45, 180, 420, 540, 9999];
+    function tick(reset) { if (!reset) secs++; timerTxt.textContent = Math.floor(secs / 60) + ':' + ('0' + secs % 60).slice(-2); var k = 0; limits.forEach(function (x, i) { if (secs >= x && i < 5) k = i; }); steps.forEach(function (d, i) { d.classList.toggle('now', secs > 0 && i === k); }); }
+    root.appendChild(tools);
+    root.appendChild(h('p', 'mut noprint', 'Read the SAY lines in your own words. Write the WRITE lines on the board. Use the colour code: given, key step, answer, mistake.'));
+    steps.push(step('S', 'Spark', '0:00 – 0:45', [h('p', null, '**SAY:** Open with a real-life question. Course idea for this unit: ' + u.activity), h('p', 'wr', '**WRITE:** the title “' + l.title + '” and one picture.')]));
+    steps.push(step('P', 'Present', '0:45 – 3:00', [h('p', null, '**SAY:** “By the end of this lesson you will be able to ' + low.replace(/\.$/, '') + '.”'), h('p', null, '**TEACH:** one idea at a time.'), h('ul', null, null, c.notes.filter(function (b) { return b.list; }).reduce(function (a, b) { return a.concat(b.list); }, []).map(function (t) { return h('li', null, t); })), h('p', 'wr', '**WRITE:** the definitions (yellow) and the formulas.')]));
+    var exs = c.notes.filter(function (b) { return b.ex; });
+    steps.push(step('A', 'Apply', '3:00 – 7:00', exs.map(function (b, i) { return h('div', 'ex', null, [h('p', 'q', 'Example ' + (i + 1) + ': ' + b.ex.q), h('ol', null, null, b.ex.steps.map(function (t) { return h('li', null, t); })), h('p', 'a', 'Answer: ' + b.ex.a)]); }).concat([h('p', 'wr', '**SAY:** think aloud, and say why you choose each step. Pause 2 seconds after each line you write.')])));
+    var rq = genQ(l.id) || (c.quiz && c.quiz[0]), rbox = h('div');
+    function showRun(q) { rbox.innerHTML = ''; if (!q) return; var ans = h('p', 'a', 'Answer: ' + q.o[q.a]), why = h('p', null, q.why); ans.hidden = why.hidden = true;
+      rbox.appendChild(h('p', 'q', 'Pause and try (30-second timer on screen): ' + q.q)); rbox.appendChild(h('p', 'mut', 'Choices: ' + q.o.join('   |   ')));
+      rbox.appendChild(btn('Show answer', 'noprint', function () { ans.hidden = why.hidden = false; })); rbox.appendChild(btn('New problem', 'noprint', function () { showRun(genQ(l.id) || q); })); rbox.appendChild(ans); rbox.appendChild(why); }
+    showRun(rq);
+    steps.push(step('R', 'Run', '7:00 – 9:00', [h('p', null, '**SAY:** “Pause the video and try this. You have thirty seconds.”'), rbox]));
+    steps.push(step('K', 'Keep', '9:00 – 10:00', [h('p', null, '**SAY (recap):** ' + c.notes.filter(function (b) { return b.recap; }).map(function (b) { return b.recap.join('  •  '); }).join('')), h('p', null, '**COMMON MISTAKE:** ' + c.notes.filter(function (b) { return b.warn; }).map(function (b) { return b.warn; }).join('')), h('p', null, '**NEXT:** ' + (next ? '“Next lesson: ' + next.title + '.”' : 'Thank the learners and point to the practice sheet.'))]));
+    steps.forEach(function (d) { root.appendChild(d); });
+    root.appendChild(h('div', 'warn noprint', '**Recording tip:** open the Math Board in one window to record with OBS, and open this script on your phone or a second window.'));
+    return root;
   }
 
   /* ---------- routing and theme ---------- */
   function route() {
     document.onkeydown = null;
     var p = location.hash.replace(/^#\/?/, '').split('/');
-    if (p[0] === 'lesson' && byId[p[1]]) lessonView(byId[p[1]], p[2] === 'quiz' ? 'quiz' : 'notes');
+    if (p[0] === 'lesson' && byId[p[1]]) lessonView(byId[p[1]], ['quiz', 'practice', 'script'].indexOf(p[2]) > -1 ? p[2] : 'notes');
+    else if (p[0] === 'unit' && /^g\d+-u\d+$/.test(p[1] || '')) { var m = p[1].match(/^g(\d+)-u(\d+)$/), gg = COURSE.grades.filter(function (x) { return x.g === +m[1]; })[0], uu = gg && gg.units.filter(function (x) { return x.n === +m[2]; })[0]; if (uu) unitView(uu, gg); else catalog(9); }
     else catalog(p[0] === 'grade' ? (+p[1] || 9) : store.get('grade', 9));
     window.scrollTo(0, 0);
   }
