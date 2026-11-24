@@ -124,10 +124,20 @@ You can also use **Join** and type the room code instead of opening the link.
 
 ### How sync works, and its limits
 
-- Sync is device to device (WebRTC, using the free PeerJS signalling service). The strokes do not pass through any server of yours.
-- It needs internet on both devices. On some mobile networks or strict Wi-Fi, a direct connection cannot be made. Then try both devices on the same Wi-Fi.
-- If you need a more dependable connection, add a TURN server to `js/sync.js` (see the PeerJS docs, `config.iceServers`) or replace sync with a hosted real-time service.
+- Sync goes through a free **public relay** (MQTT over secure WebSocket). A relay works on any network, including mobile data and different Wi-Fi networks. The app tries three relays one after another (`broker.hivemq.com`, `broker.emqx.io`, `test.mosquitto.org`).
+- The status line shows what is happening: **connecting…**, **online, waiting for another device**, or **1 other device connected**.
+- When a new device joins, the host sends its board to it automatically. **Sync now** pushes your board to the other devices again.
+- Both devices need internet. If the status says the relay is unreachable, try another network or check that your network does not block secure WebSocket connections.
+- The relays are public: anyone who knows your room code could see the drawing. Lesson boards are fine, but do not draw private information.
 - Drawing on a single device always works, with or without sync.
+
+#### If a device will not join
+
+1. Open the **link** from the host's **Copy link** button, not the plain address. The link ends with `?room=` and the code. Make sure the link starts with your deployed address (for example `https://your-site.vercel.app`), not `localhost`.
+2. Check the status line on both devices. Both should say the room code and **online**.
+3. Close and reopen the page on both devices after a new deployment (the app caches its files).
+4. Turn off any VPN or data saver that may block WebSocket connections.
+5. If the host's room code changed (for example after reloading the host page), open the new link.
 
 ## Project structure
 
@@ -136,7 +146,7 @@ math-board/
 ├── index.html              page
 ├── css/style.css           styles
 ├── js/app.js               whiteboard logic
-├── js/sync.js              phone/PC sync (PeerJS)
+├── js/sync.js              phone/PC sync (relay)
 ├── lessons.html            lessons, notes and quizzes page
 ├── css/lessons.css         styles for the lessons page
 ├── js/lessons.js           catalogue, notes, quiz, practice, teach script, unit tests, progress
@@ -150,7 +160,7 @@ math-board/
 ├── data/content-g12.js     Grade 12 (50 lessons)
 ├── tools/validate-content.js  checks lesson content (npm run check)
 ├── serve.json              local server settings
-├── vendor/peerjs.min.js    PeerJS 1.5.4 (MIT licence)
+├── vendor/mqtt.min.js      MQTT.js 5 (MIT licence), used for the sync relay
 ├── sw.js                   service worker (offline, fast loading)
 ├── manifest.webmanifest    installable app settings
 ├── favicon.svg / .ico / -16 / -32   favicons
@@ -176,4 +186,4 @@ math-board/
 
 ## Licence
 
-MIT for this project (see `LICENSE`). PeerJS is MIT licensed (see `vendor/PEERJS-LICENSE.txt`).
+MIT for this project (see `LICENSE`). MQTT.js is MIT licensed (see `vendor/MQTT-LICENSE.txt`).
