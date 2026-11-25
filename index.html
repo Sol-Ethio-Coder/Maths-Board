@@ -22,13 +22,20 @@
 </head>
 <body>
 <div id="hint">Turn your phone sideways for a bigger board.</div>
-<div id="stage"><div id="board" class="g"><canvas id="ink"></canvas></div></div>
+<div id="stage"><div id="board" class="g"><canvas id="ink"></canvas><canvas id="fx"></canvas></div></div>
 <div id="tp" hidden><input id="ti" type="text" maxlength="200" placeholder="Type, e.g. x^2 + 3x = 0" autocomplete="off"><div id="sym"></div><div class="tb"><button id="tok" type="button">Place on board</button><button id="tcn" type="button">Cancel</button></div></div>
+<div id="gp" hidden><div class="gr"><label>y = <input id="gf" type="text" value="x^2 - 4" placeholder="x^2 - 4,  sin(x),  2x + 1" autocomplete="off"></label></div>
+<div class="gr"><label>x from <input id="gx0" type="number" value="-10" step="any"></label><label>to <input id="gx1" type="number" value="10" step="any"></label><label>y from <input id="gy0" type="number" value="-5.5" step="any"></label><label>to <input id="gy1" type="number" value="5.5" step="any"></label></div>
+<label class="chk"><input id="gax" type="checkbox" checked> Draw the axes</label><div id="gerr" class="err"></div>
+<div class="tb"><button id="gok" type="button">Plot</button><button id="gcn" type="button">Close</button></div>
+<p class="hint">Use ^ for powers (x^2). Try sin(x), sqrt(x), 1/x, abs(x), 2^x, ln(x). For a second function in another colour, untick “Draw the axes”.</p></div>
+<div id="timer" hidden></div><div id="vchip" hidden>Live view</div>
 <div id="bar" role="toolbar" aria-label="Whiteboard tools"></div>
 <button id="show" title="Show toolbar (H)">Menu</button>
 <noscript>Math Board needs JavaScript to work.</noscript>
 <script src="/vendor/mqtt.min.js"></script>
 <script src="/js/sync.js"></script>
+<script src="/js/mathexpr.js"></script>
 <script src="/js/app.js"></script>
 <script>if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})</script>
 </body>

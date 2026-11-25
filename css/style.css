@@ -37,3 +37,16 @@ button.danger{background:#E8602C;color:#fff}
 a.btn{font:inherit;color:var(--tx);background:rgba(127,127,127,.25);border-radius:8px;padding:8px 11px;min-height:40px;display:inline-flex;align-items:center;text-decoration:none}
 a.btn:hover{background:rgba(127,127,127,.4)}
 @media (max-height:500px){a.btn{min-height:34px;padding:5px 8px;font-size:13px}}
+
+#fx{position:absolute;left:0;top:0;pointer-events:none;display:block}
+#gp{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:5;width:min(94vw,640px);background:var(--ui);padding:10px 12px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.45);-webkit-user-select:text;user-select:text}
+#gp .gr{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;align-items:center}
+#gp label{display:flex;align-items:center;gap:6px;font-size:15px}
+#gp input[type=text],#gp input[type=number]{font:18px Calibri,"Segoe UI",Arial,sans-serif;padding:6px 8px;border-radius:8px;border:2px solid var(--ac);background:var(--bg);color:var(--tx);min-width:0}
+#gf{width:min(60vw,360px)}#gp input[type=number]{width:84px}
+#gp .chk{margin:4px 0}.err{color:#FF6B6B;min-height:1.2em;font-size:14px}
+#gp .tb{display:flex;gap:8px;justify-content:flex-end}.hint{font-size:12px;opacity:.8;margin:6px 0 0}
+#timer{position:fixed;right:14px;top:12px;z-index:4;font:700 56px/1 Cambria,Georgia,serif;color:#fff;background:rgba(15,42,74,.88);border:3px solid var(--ac);border-radius:16px;padding:8px 18px;pointer-events:none}
+#timer.done{background:#E8602C;color:#fff}
+#vchip{position:fixed;left:10px;top:10px;z-index:4;background:rgba(15,42,74,.85);color:#fff;border:1px solid var(--ac);border-radius:99px;padding:3px 12px;font-size:13px;pointer-events:none}
+#pl{font-size:13px;min-width:36px;text-align:center}

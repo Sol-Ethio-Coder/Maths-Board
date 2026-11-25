@@ -42,15 +42,30 @@ A lesson needs at least one generator **or** at least 3 of your own questions. T
 
 After editing: run `npm run check`, raise the version in `sw.js`, then commit and push.
 
+### Teaching tools
+
+- **Pages:** add pages (**+ Page**), move with **‹ ›** (or `[` and `]`), delete a page (More). Pages stay in sync between your devices.
+- **More tools:** Highlight, Arrow, Oval, **Rub out** (removes only the stroke you touch; Undo brings it back), and the **Laser** pointer (a red dot that follows your pointer and fades, also shown on the other device).
+- **Graph:** type a function such as `x^2 - 4`, `sin(x)`, `1/x` or `2^x` and plot it with axes and numbers. It is drawn as normal strokes, so one **Undo** removes the whole graph. Plot a second function in another colour by unticking “Draw the axes”. The parser is safe (it does not run code).
+- **Timer** (More menu, or key `T`): a big countdown on the board for the “pause and try” step (30 s, 1 min, 2 min), with a beep at the end.
+- **Autosave:** your board is saved in the browser and restored when you reload.
+- **Save board file / Open board file:** keep a lesson board as a `.json` file and open it later. **Save PNG** saves the current page as an image. **New board** clears all pages.
+- **Live view link:** under More choose **Copy viewer link**. People who open it see your board live but cannot draw. Use it for online tutoring (anyone who has the link can watch).
+
 ## Keyboard shortcuts
 
 | Key | Action |
 |---|---|
 | 1 2 3 4 | Colours: Given, Key step, Answer, Mistake |
-| P L C B X M | Pen, Line, Circle, Box, Text, Move |
-| + − 0 | Zoom in, zoom out, fit |
-| E | Eraser (clear all) |
+| P U L A C O B X | Pen, Highlight, Line, Arrow, Circle, Oval, Box, Text |
+| R / K / M | Rub out / Laser / Move |
+| F | Open the graph plotter |
+| E | Eraser (clear the whole page) |
 | Ctrl+Z | Undo |
+| [ ] or PageUp PageDown | Previous / next page |
+| N | New page |
+| T | Start or stop the 30-second timer |
+| + − 0 | Zoom in, zoom out, fit |
 | G | Change background (grid, lines, plain) |
 | H | Hide or show toolbar |
 
@@ -147,6 +162,7 @@ math-board/
 ├── css/style.css           styles
 ├── js/app.js               whiteboard logic
 ├── js/sync.js              phone/PC sync (relay)
+├── js/mathexpr.js          safe parser for the graph plotter
 ├── lessons.html            lessons, notes and quizzes page
 ├── css/lessons.css         styles for the lessons page
 ├── js/lessons.js           catalogue, notes, quiz, practice, teach script, unit tests, progress
