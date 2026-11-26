@@ -15,9 +15,11 @@ Open **Lessons** in the toolbar (or go to `/lessons.html`). **All 209 lessons** 
 Every lesson has four tabs:
 
 - **Notes:** objective, key ideas, worked examples, a common-mistake box and a recap. Print or save as PDF.
-- **Quiz:** 6 multiple-choice questions with shuffled options, an explanation after every answer, a score, a review of missed questions and a retry. Questions are a mix of fixed questions and fresh, computer-checked ones, so a retry is never the same.
+- **Quiz:** 6 multiple-choice questions, **each with a 30-second timer that starts as soon as the question appears** (details below), with shuffled options, an explanation after every answer, a score, a review of missed questions and a retry. Questions are a mix of fixed questions and fresh, computer-checked ones, so a retry is never the same.
 - **Practice:** unlimited generated questions with a streak counter (80 question generators cover the number work, algebra, geometry, trigonometry, statistics, matrices, complex numbers, calculus and business maths).
 - **Teach script:** the S.P.A.R.K. plan for recording that lesson (Spark, Present, Apply, Run, Keep) with a timer, big text, the examples, a “pause and try” problem with its answer, the common mistake and the next lesson. Open it on your phone or a second window while you record the Math Board with OBS.
+
+**Question timer:** quizzes, unit tests and practice give each question 30 seconds. A bar and a countdown show the time left (red in the last 10 seconds). When time runs out, the right answer and explanation are shown, the question counts as not answered correctly, and the learner moves on. The score card says how many questions ran out of time. The timer is on by default, and a button above every quiz switches it off or on (the choice is remembered). To change the length, edit `window.MB_TIMER_SECONDS || 30` in `js/lessons.js`.
 
 Also: a **unit test** for every unit (10 mixed questions, 7 correct to pass), progress saved in the learner's browser, search, and a light or dark theme.
 

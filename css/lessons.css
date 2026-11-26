@@ -53,6 +53,11 @@ th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);verti
 .score{font:700 44px/1 Cambria,Georgia,serif;color:var(--ac)}
 footer{display:flex;justify-content:center;padding:14px;border-top:1px solid var(--line)}
 #dev{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--mut);font-size:13px}#dev img{border-radius:6px}
+/* question timer */
+.timer{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
+.timer .tt{font:700 20px Cambria,Georgia,serif;color:var(--ac);min-width:112px}
+.tbar{flex:1;height:10px;background:var(--card2);border-radius:99px;overflow:hidden}.tbar i{display:block;height:100%;width:100%;background:var(--ok);transition:width .2s linear}
+.timer.low .tt{color:var(--bad)}.timer.low .tbar i{background:var(--bad)}.timer.out .tt{color:var(--bad)}
 /* teach script */
 .script{line-height:1.6}
 .step{background:var(--card);border-radius:14px;padding:6px 16px 10px;margin:12px 0;border-left:6px solid var(--line)}

@@ -121,27 +121,54 @@
     nodes.push(pn); show(nodes);
   }
 
+  /* ---------- 30-second question timer (on by default; learners can switch it off) ---------- */
+  var tIds = [];
+  function timerOn() { return store.get('timer', true) !== false; }
+  function makeTimer(onEnd) {
+    var total = window.MB_TIMER_SECONDS || 30, end = Date.now() + total * 1000, id = null,
+        el = h('div', 'timer', null, [h('span', 'tt'), h('div', 'tbar', null, [h('i')])]), txt = el.firstChild, fill = el.lastChild.firstChild;
+    function stop() { clearInterval(id); }
+    function tick() {
+      var left = Math.max(0, (end - Date.now()) / 1000);
+      txt.textContent = '⏱ ' + Math.ceil(left) + ' s'; fill.style.width = (left / total * 100) + '%'; el.classList.toggle('low', left <= 10);
+      if (left <= 0) { stop(); el.classList.add('out'); txt.textContent = '⏱ Time is up'; onEnd(); }
+    }
+    id = setInterval(tick, 200); tIds.push(id); tick();
+    return { el: el, stop: stop };
+  }
+  function timerSwitch(onChange) {
+    var b = btn('', '', function () { store.set('timer', !timerOn()); paint(); onChange(); });
+    function paint() { b.textContent = timerOn() ? '⏱ Timer on: ' + (window.MB_TIMER_SECONDS || 30) + ' seconds per question (tap to turn off)' : '⏱ Timer off (tap to turn on)'; }
+    paint(); return h('div', 'actions noprint', null, [b]);
+  }
+
   /* ---------- quiz engine (used for lesson quizzes and unit tests) ---------- */
   function runQuiz(host, qlist, saveKey, nextL, retryHash, backHash) {
-    var i = 0, score = 0, wrong = [], box = h('div'); host.appendChild(box);
+    var i = 0, score = 0, late = 0, wrong = [], qt = { start: null, stop: null }, box = h('div');
+    host.appendChild(timerSwitch(function () { if (timerOn()) { if (qt.start) qt.start(); } else if (qt.stop) qt.stop(); })); host.appendChild(box);
     function ask() {
       box.innerHTML = '';
       var q = qlist[i], order = shuffle(q.o.map(function (t, k) { return k; })), done = false;
       var card = h('div', 'q-card', null, [h('div', 'mut', 'Question ' + (i + 1) + ' of ' + qlist.length), h('h2', null, q.q)]), opts = h('div', 'opts'), fb = h('div'), nx = h('div', 'actions');
       function pick(pos) {
-        if (done) return; done = true; var right = order[pos] === q.a; if (right) score++; else wrong.push(q);
+        if (done) return; done = true; if (qt.stop) qt.stop(); var right = pos >= 0 && order[pos] === q.a; if (right) score++; else wrong.push(q); if (pos < 0) late++;
         [].forEach.call(opts.children, function (b, k) { b.disabled = true; if (order[k] === q.a) b.classList.add('good'); else if (k === pos) b.classList.add('wrong'); });
-        fb.className = 'fb'; fb.textContent = (right ? 'Correct. ' : 'Not quite. ') + q.why;
+        fb.className = 'fb'; fb.textContent = (pos < 0 ? 'Time is up. ' : right ? 'Correct. ' : 'Not quite. ') + q.why;
         nx.appendChild(btn(i + 1 < qlist.length ? 'Next question' : 'See my score', 'pri', function () { i++; if (i < qlist.length) ask(); else finish(); })); nx.firstChild.focus();
       }
       order.forEach(function (k, pos) { var b = h('button', 'opt', null, [h('kbd', null, String(pos + 1)), document.createTextNode(q.o[k])]); b.type = 'button'; b.onclick = function () { pick(pos); }; opts.appendChild(b); });
       card.appendChild(opts); card.appendChild(fb); card.appendChild(nx); box.appendChild(card);
       box._key = function (e) { var n = parseInt(e.key, 10); if (n >= 1 && n <= order.length) pick(n - 1); };
+      var tm = null;
+      qt.stop = function () { if (tm) { tm.stop(); if (tm.el.parentNode && !done) tm.el.parentNode.removeChild(tm.el); tm = null; } };
+      qt.start = function () { if (done || tm || !timerOn()) return; tm = makeTimer(function () { pick(-1); }); card.insertBefore(tm.el, card.children[1]); };
+      qt.start();                              /* the 30 seconds start as soon as the question appears */
     }
     function finish() {
-      box._key = null; var total = qlist.length, b = best(saveKey.slice(5)), nb = Math.max(b ? b.best : 0, score);
+      box._key = null; qt.start = qt.stop = null; var total = qlist.length, b = best(saveKey.slice(5)), nb = Math.max(b ? b.best : 0, score);
       store.set(saveKey, { best: nb, total: total, at: new Date().toISOString().slice(0, 10) });
       var ok = score / total >= PASS, card = h('div', 'q-card', null, [h('div', 'score', score + ' / ' + total), h('p', null, ok ? 'Well done. You passed.' : 'Keep going. Read the notes again and try once more; you need ' + Math.ceil(PASS * total) + ' correct to pass.')]);
+      if (late) card.insertBefore(h('p', 'mut', 'Time ran out on ' + late + ' question' + (late > 1 ? 's' : '') + '.'), card.children[2]);
       if (wrong.length) { card.appendChild(h('h3', null, 'Review the ones you missed')); wrong.forEach(function (q) { card.appendChild(h('div', 'ex', null, [h('p', 'q', q.q), h('p', 'a', 'Answer: ' + q.o[q.a]), h('p', null, q.why)])); }); }
       var act = h('div', 'actions'); act.appendChild(btn('Try again', 'pri', function () { route(); }));
       act.appendChild(btn('Back', '', function () { location.hash = backHash; })); if (nextL) act.appendChild(link('Next lesson →', '#/lesson/' + nextL.id)); card.appendChild(act); box.innerHTML = ''; box.appendChild(card);
@@ -157,21 +184,27 @@
 
   /* ---------- practice: unlimited generated questions ---------- */
   function practice(host, l) {
-    var box = h('div'), tot = 0, ok = 0, streak = 0; host.appendChild(box);
+    var box = h('div'), tot = 0, ok = 0, streak = 0, pt = { start: null, stop: null };
+    host.appendChild(timerSwitch(function () { if (timerOn()) { if (pt.start) pt.start(); } else if (pt.stop) pt.stop(); })); host.appendChild(box);
     if (!gensFor(l.id).length) box.appendChild(h('div', 'obj', 'This lesson has no question generator yet, so practice uses the lesson quiz questions. Add a generator name to the lesson to get unlimited questions.'));
     function next() {
       var q = genQ(l.id) || shuffle((CT[l.id].quiz || []).slice())[0]; if (!q) return;
       var order = shuffle(q.o.map(function (t, k) { return k; })), done = false;
       var stats = h('div', 'mut', 'Answered: ' + tot + ' · Correct: ' + ok + ' · Streak: ' + streak), card = h('div', 'q-card', null, [stats, h('h2', null, q.q)]), opts = h('div', 'opts'), fb = h('div'), nx = h('div', 'actions');
+      function answer(pos) {
+        if (done) return; done = true; if (pt.stop) pt.stop(); tot++; var right = pos >= 0 && order[pos] === q.a; if (right) { ok++; streak++; } else streak = 0;
+        [].forEach.call(opts.children, function (x, z) { x.disabled = true; if (order[z] === q.a) x.classList.add('good'); else if (z === pos) x.classList.add('wrong'); });
+        fb.className = 'fb'; fb.textContent = (pos < 0 ? 'Time is up. ' : right ? 'Correct. ' : 'Not quite. ') + q.why; nx.appendChild(btn('New question', 'pri', next)); nx.firstChild.focus();
+      }
       order.forEach(function (k, pos) {
         var b = h('button', 'opt', null, [h('kbd', null, String(pos + 1)), document.createTextNode(q.o[k])]); b.type = 'button';
-        b.onclick = function () {
-          if (done) return; done = true; tot++; var right = order[pos] === q.a; if (right) { ok++; streak++; } else streak = 0;
-          [].forEach.call(opts.children, function (x, z) { x.disabled = true; if (order[z] === q.a) x.classList.add('good'); else if (z === pos) x.classList.add('wrong'); });
-          fb.className = 'fb'; fb.textContent = (right ? 'Correct. ' : 'Not quite. ') + q.why; nx.appendChild(btn('New question', 'pri', next)); nx.firstChild.focus();
-        }; opts.appendChild(b);
+        b.onclick = function () { answer(pos); }; opts.appendChild(b);
       });
       card.appendChild(opts); card.appendChild(fb); card.appendChild(nx); box.innerHTML = ''; box.appendChild(card);
+      var tm = null;
+      pt.stop = function () { if (tm) { tm.stop(); if (tm.el.parentNode && !done) tm.el.parentNode.removeChild(tm.el); tm = null; } };
+      pt.start = function () { if (done || tm || !timerOn()) return; tm = makeTimer(function () { answer(-1); }); card.insertBefore(tm.el, card.children[1]); };
+      pt.start();
       box._key = function (e) { var n = parseInt(e.key, 10); if (n >= 1 && n <= order.length) opts.children[n - 1].click(); };
     }
     document.onkeydown = function (e) { if (box._key && !e.ctrlKey && !e.metaKey) box._key(e); }; next();
@@ -209,7 +242,7 @@
 
   /* ---------- routing and theme ---------- */
   function route() {
-    document.onkeydown = null;
+    document.onkeydown = null; tIds.forEach(clearInterval); tIds = [];
     var p = location.hash.replace(/^#\/?/, '').split('/');
     if (p[0] === 'lesson' && byId[p[1]]) lessonView(byId[p[1]], ['quiz', 'practice', 'script'].indexOf(p[2]) > -1 ? p[2] : 'notes');
     else if (p[0] === 'unit' && /^g\d+-u\d+$/.test(p[1] || '')) { var m = p[1].match(/^g(\d+)-u(\d+)$/), gg = COURSE.grades.filter(function (x) { return x.g === +m[1]; })[0], uu = gg && gg.units.filter(function (x) { return x.n === +m[2]; })[0]; if (uu) unitView(uu, gg); else catalog(9); }
